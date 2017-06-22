@@ -59,6 +59,11 @@ def run(deposit_amount, deposit_interval, min_available_to_trade,
         GDAX_API_SECRET
         GDAX_PASSPHRASE
     
+    Installation:
+    
+    \b
+        pip install gdax_recurring
+    
     Example usage: 
 
     \b
