@@ -1,3 +1,5 @@
 .envrc
 *.egg-info
 *.pyc
+build
+dist
