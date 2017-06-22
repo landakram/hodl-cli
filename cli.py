@@ -48,9 +48,9 @@ def run(deposit_amount, deposit_interval, min_available_to_trade,
     
     This script is meant to be run as a cron. The cron can be run at any interval
     less than the `deposit-interval` -- I recommend daily. 
-    The script will ensure that deposits are only
-    made every `deposit-interval` irrespective of how often it is run. Do NOT run
-    this script in multiple threads, as it may result in duplicate deposits.
+    The script will ensure that deposits are only made every `deposit-interval` 
+    irrespective of how often it is run. Please ensure that you are running 
+    this script from a single thread to avoid duplicating deposits.
     
     In addition to the CLI options, a few environment variables must be present:
 
