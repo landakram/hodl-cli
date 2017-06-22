@@ -86,5 +86,9 @@ def run(deposit_amount, deposit_interval, min_available_to_trade,
     deposit_interval = datetime.timedelta(days=deposit_interval)
     min_available_to_trade = Decimal(min_available_to_trade)
     allocation_percentage = dict(allocation_percentage)
+
+    def print_function(message):
+        click.echo('{}: {}'.format(datetime.datetime.now(), message))
+
     main(deposit_amount, deposit_interval, min_available_to_trade,
-         allocation_percentage)
+         allocation_percentage, print_function)

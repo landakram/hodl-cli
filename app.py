@@ -7,7 +7,7 @@ from dateutil.tz import tzutc
 import datetime
 import GDAX as gdax
 import requests
-from pprint import pprint as p
+from pprint import pformat as p
 
 client = gdax.AuthenticatedClient(
     os.environ.get('GDAX_API_KEY'), os.environ.get('GDAX_API_SECRET'),
@@ -105,22 +105,22 @@ def deposit(amount, client=client):
 
 
 def main(deposit_amount, deposit_interval, min_available_to_trade,
-         asset_allocation):
+         asset_allocation, print_fn):
     prev_deposits = get_all_deposits()
-    print('Checking whether to deposit...')
+    print_fn('Checking whether to deposit...')
     if should_create_deposit(prev_deposits, interval=deposit_interval):
-        print('No deposit in {}. Creating deposit for ${}.'.format(
+        print_fn('No deposit in {}. Creating deposit for ${}.'.format(
             deposit_interval, deposit_amount))
-        p(deposit(deposit_amount))
+        print_fn(p(deposit(deposit_amount)))
     else:
-        print('Skipped deposit.')
+        print_fn('Skipped deposit.')
 
-    print('Checking whether to allocate...')
+    print_fn('Checking whether to allocate...')
     allocations = allocate_usd(
         minimum_available_to_trade=min_available_to_trade,
         allocation_percentages=asset_allocation)
     if not allocations:
-        print('Skipped allocations.')
+        print_fn('Skipped allocations.')
     else:
-        p(allocations)
-    print('Done.')
+        print_fn(p(allocations))
+    print_fn('Done.')
