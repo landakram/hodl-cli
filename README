@@ -12,10 +12,11 @@ Usage: gdax_recurring [OPTIONS]
   is run.
 
   This script is meant to be run as a cron. The cron can be run at any
-  interval less than the `deposit-interval` -- I recommend daily.  The
-  script will ensure that deposits are only made every `deposit-interval`
-  irrespective of how often it is run. Please ensure that you are running
-  this script from a single thread to avoid duplicating deposits.
+  interval less than the `deposit-interval` -- I recommend daily. The script
+  will ensure that deposits are only made every `deposit-interval`
+  irrespective of how often it is run. Please make sure that only one
+  instance of gdax_recurring is running at a time to prevent duplicate
+  deposits.
 
   In addition to the CLI options, a few environment variables must be
   present:
@@ -30,9 +31,9 @@ Usage: gdax_recurring [OPTIONS]
 
   Example usage:
 
-      export GDAX_API_KEY=<your_api_key> 
-      export GDAX_API_SECRET=<your_api_secret> 
-      export GDAX_PASSPHRASE=<your_passphrase> 
+      export GDAX_API_KEY=<your_api_key>
+      export GDAX_API_SECRET=<your_api_secret>
+      export GDAX_PASSPHRASE=<your_passphrase>
       gdax_recurring -d 100.00 -i 15 -m 50.00 -a LTC 0.5 -a ETH 0.25 -a BTC 0.25
 
   Explanation:
