@@ -26,7 +26,7 @@ setup(
     ],
     py_modules=['cli', 'app'],
     install_requires=[
-        'click', 'GDAX', 'python-dateutil', 'requests'
+        'click', 'GDAX>=1.0.0<2.0.0', 'python-dateutil', 'requests'
     ],
     entry_points='''
         [console_scripts]

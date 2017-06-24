@@ -1,11 +1,11 @@
 import os
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 
 import dateutil.parser
 from dateutil.tz import tzutc
 
 import datetime
-import GDAX as gdax
+import gdax
 import requests
 from pprint import pformat as p
 
@@ -16,7 +16,7 @@ client = gdax.AuthenticatedClient(
 
 def get_bank_id(client=client):
     account_type = 'ach_bank_account'
-    payment_methods = client.getPaymentMethods()
+    payment_methods = client.get_payment_methods()
 
     for p in payment_methods:
         if p['type'] == account_type:
@@ -25,7 +25,7 @@ def get_bank_id(client=client):
 
 def get_completed_deposits(client=client):
     a = get_usd_account(client=client)
-    history = client.getAccountHistory(a['id'])[0]
+    history = client.get_account_history(a['id'])[0]
     for entry in history:
         if entry['type'] == 'transfer' and entry['details'][
                 'transfer_type'] == 'deposit':
@@ -53,7 +53,7 @@ def should_create_deposit(deposits, interval=datetime.timedelta(days=15)):
 
 
 def get_usd_account(client=client):
-    accounts = client.getAccounts()
+    accounts = client.get_accounts()
     for a in accounts:
         if a['currency'] == 'USD':
             return a
@@ -74,13 +74,14 @@ def get_available_to_trade(client=client):
 
 def buy(currency, amount_in_usd, client=client, dry_run=False):
     pair = '{}-USD'.format(currency)
+    funds = amount_in_usd.quantize(Decimal('.01'), rounding=ROUND_DOWN)
     buy_params = dict(
-        product_id=pair, type='market', side='buy', funds=amount_in_usd)
+        product_id=pair, type='market', side='buy', funds=str(funds))
     if dry_run:
         print 'dry_run'
         print buy_params
     else:
-        return client.buy(buy_params)
+        return client.buy(**buy_params)
 
 
 def allocate_usd(client=client,
