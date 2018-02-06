@@ -7,7 +7,7 @@ setup(
     name='gdax_recurring',
     description='Automates recurring USD deposits and asset allocation for GDAX.',
     long_description=long_description,
-    version='1.0.1',
+    version='1.0.2',
     author='Mark Hudnall',
     author_email='me@markhudnall.com',
     url='https://github.com/landakram/gdax_recurring',
