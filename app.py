@@ -78,8 +78,8 @@ def buy(currency, amount_in_usd, client=client, dry_run=False):
     buy_params = dict(
         product_id=pair, type='market', side='buy', funds=str(funds))
     if dry_run:
-        print 'dry_run'
-        print buy_params
+        print('dry_run')
+        print(buy_params)
     else:
         return client.buy(**buy_params)
 
