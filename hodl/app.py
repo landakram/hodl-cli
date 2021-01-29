@@ -5,13 +5,15 @@ import dateutil.parser
 from dateutil.tz import tzutc
 
 import datetime
-import gdax
+import cbpro
 import requests
 from pprint import pformat as p
 
-client = gdax.AuthenticatedClient(
-    os.environ.get('GDAX_API_KEY'), os.environ.get('GDAX_API_SECRET'),
-    os.environ.get('GDAX_PASSPHRASE'))
+client = cbpro.AuthenticatedClient(
+    os.environ.get('COINBASE_PRO_API_KEY'),
+    os.environ.get('COINBASE_PRO_API_SECRET'),
+    os.environ.get('COINBASE_PRO_PASSPHRASE')
+)
 
 
 def get_bank_id(client=client):

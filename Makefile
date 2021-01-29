@@ -5,12 +5,12 @@ clean:
 	rm -rf venv
 
 compile:
-	python setup.py bdist_wheel
+	poetry build
 
 upload:
-	twine upload -r pypi dist/*
+	poetry publish
 
 docs: compile
 	virtualenv venv
-	. venv/bin/activate && pip install dist/* && gdax_recurring -h > README
+	. venv/bin/activate && pip install dist/*.whl && hodl -h > README
 	rm -rf venv
