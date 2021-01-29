@@ -4,8 +4,9 @@ import os
 from decimal import Decimal
 
 import click
+import cbpro
 
-from hodl.app import main
+from hodl.app import HodlApp
 
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
@@ -88,7 +89,7 @@ def run(deposit_amount, deposit_interval, min_available_to_trade,
     for v in required_env_variables:
         if v not in os.environ:
             raise click.ClickException(
-                '{} must be specified in the environment'.format(v))
+                '⚠️  {} must be specified in the environment.'.format(v))
 
     deposit_interval = datetime.timedelta(days=deposit_interval)
     min_available_to_trade = Decimal(min_available_to_trade)
@@ -97,5 +98,11 @@ def run(deposit_amount, deposit_interval, min_available_to_trade,
     def print_function(message):
         click.echo('{}: {}'.format(datetime.datetime.now(), message))
 
-    main(deposit_amount, deposit_interval, min_available_to_trade,
-         allocation_percentage, print_function)
+    client = cbpro.AuthenticatedClient(
+        os.environ.get('COINBASE_PRO_API_KEY'),
+        os.environ.get('COINBASE_PRO_API_SECRET'),
+        os.environ.get('COINBASE_PRO_PASSPHRASE')
+    )
+
+    app = HodlApp(client=client, print_fn=print_function)
+    app.run(deposit_amount, deposit_interval, min_available_to_trade, allocation_percentage)

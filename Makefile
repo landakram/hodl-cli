@@ -7,6 +7,10 @@ clean:
 compile:
 	poetry build
 
+install:
+	virtualenv venv
+	./venv/bin/pip install dist/*.whl
+
 upload:
 	poetry publish
 
