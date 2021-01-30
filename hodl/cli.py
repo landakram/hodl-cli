@@ -11,6 +11,16 @@ from hodl.app import HodlApp
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option(
+    '--deposit-account',
+    '-n',
+    default='',
+    help='Name string used to filter multiple bank accounts. If not specified, the first account found with `deposit-account-type` is used')
+@click.option(
+    '--deposit-account-type',
+    '-t',
+    default='ach_bank_account',
+    help='Account type used in conjunction with `deposit-account` to find an account from which to deposit fiat')
+@click.option(
     '--deposit-amount',
     '-d',
     default=Decimal('100.00'),
@@ -27,25 +37,45 @@ from hodl.app import HodlApp
     '-m',
     default=Decimal('100.00'),
     type=Decimal,
-    help='The minimum available balance in USD that, when met, will result in an allocation'
+    help='The minimum available balance in fiat that, when met, will result in an allocation'
 )
 @click.option(
     '--allocation-percentage',
     '-a',
     type=(str, Decimal),
     multiple=True,
-    help='A currency and the percentage of available funds that should be allocated to it. This option may be provided multiple times for different currencies and the total percentage should add up to 1. If the total percentage is less than one, the remainder will be left as USD. \n\nExample: -a ETH 0.25 -a BTC 0.25 -a LTC 0.5'
+    help='A currency and the percentage of available funds that should be allocated to it. This option may be provided multiple times for different currencies and the total percentage should add up to 1. If the total percentage is less than one, the remainder will be left as fiat. \n\nExample: -a ETH 0.25 -a BTC 0.25 -a LTC 0.5'
 )
-def run(deposit_amount, deposit_interval, min_available_to_trade,
-        allocation_percentage):
+@click.option(
+    '--dry-run',
+    default=False,
+    is_flag=True,
+    type=bool,
+    help='When present, print what we would have done but don\'t actually deposit or buy anything'
+)
+@click.option(
+    '--verbose',
+    '-v',
+    default=False,
+    is_flag=True,
+    type=bool,
+    help='When present, print debug logs.')
+def run(deposit_account,
+        deposit_account_type,
+        deposit_amount,
+        deposit_interval,
+        min_available_to_trade,
+        allocation_percentage,
+        dry_run,
+        verbose):
     """
     Dollar-cost averaging for crypto on the command line using Coinbase Pro.
 
     When run, hodl will check whether a deposit needs to be made and, if so, initiate
     the deposit using a linked bank account.
 
-    Then, if there is enough available USD in the Pro account, it will buy currencies
-    using all of the available USD, given a user-specified asset allocation. Currencies
+    Then, if there is enough available fiat in the Pro account, it will buy currencies
+    using all of the available fiat, given a user-specified asset allocation. Currencies
     are traded at market price at the time the script is run.
 
     hodl is meant to be run as a cron. The cron can be run at any interval
@@ -77,7 +107,7 @@ def run(deposit_amount, deposit_interval, min_available_to_trade,
 
     Explanation:
 
-        The above invocation will deposit $100.00 every 15 days. In addition, if the Pro account has at least $50.00 available to trade, all of the available USD will be used to buy other currencies as follows:
+        The above invocation will deposit $100.00 every 15 days. In addition, if the Pro account has at least $50.00 available to trade, all of the available fiat will be used to buy other currencies as follows:
 
     \b
         50% will be used to buy LTC
@@ -104,5 +134,12 @@ def run(deposit_amount, deposit_interval, min_available_to_trade,
         os.environ.get('COINBASE_PRO_PASSPHRASE')
     )
 
-    app = HodlApp(client=client, print_fn=print_function)
-    app.run(deposit_amount, deposit_interval, min_available_to_trade, allocation_percentage)
+    app = HodlApp(client=client, print_fn=print_function, dry_run=dry_run, verbose=verbose)
+    app.run(
+        deposit_account,
+        deposit_account_type,
+        deposit_amount,
+        deposit_interval,
+        min_available_to_trade,
+        allocation_percentage
+    )
