@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "hodl"
+name = "hodl-cli"
 version = "0.1.0"
 description = "Dollar-cost averaging for crypto on the command line."
 authors = ["Mark Hudnall <me@markhudnall.com>"]
@@ -31,4 +31,4 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-hodl = 'hodl.cli:run'
+hodl-cli = 'hodl_cli.cli:run'

@@ -1,20 +1,25 @@
-Usage: hodl [OPTIONS]
+Usage: hodl-cli [OPTIONS]
 
   Dollar-cost averaging for crypto on the command line using Coinbase Pro.
 
-  When run, hodl will check whether a deposit needs to be made and, if so,
-  initiate the deposit using a linked bank account.
+  When run, hodl-cli will check whether a deposit needs to be made and, if
+  so, initiate the deposit using a linked bank account.
 
-  Then, if there is enough available USD in the Pro account, it will buy
-  currencies using all of the available USD, given a user-specified asset
-  allocation. Currencies are traded at market price at the time the script
-  is run.
+  Then, if there is enough available fiat in the Pro account, hodl-cli will
+  buy currencies using the specified fiat amount, given a user-specified
+  asset allocation. Currencies are traded at market price at the time the
+  script is run.
 
-  hodl is meant to be run as a cron. The cron can be run at any interval
-  less than the `deposit-interval` -- I recommend daily. The script will
-  ensure that deposits are only made every `deposit-interval` irrespective
-  of how often it is run. Please make sure that only one instance of hodl is
-  running at a time to prevent duplicate deposits.
+  hodl-cli is meant to be run as a cron. The cron can be run at any interval
+  less than the `interval` -- I recommend daily. The script will ensure that
+  deposits and buys are only made every `interval` days irrespective of how
+  often it is run. This is done by searching account  history in the past
+  `interval` days and ensuring that no deposit or buy for a given amount has
+  been executed.
+
+  hodl-cli does *not* protect against concurrency issues. Please make sure
+  that only one instance of hodl-cli is running at a time to prevent
+  duplicate deposits and buys (PRs welcome).
 
   In addition to the CLI options, a few environment variables must be
   present:
@@ -25,35 +30,42 @@ Usage: hodl [OPTIONS]
 
   Installation:
 
-      pip install hodl
+      pip install hodl-cli
 
   Example usage:
 
       export COINBASE_PRO_API_KEY=<your_api_key>
       export COINBASE_PRO_API_SECRET=<your_api_secret>
       export COINBASE_PRO_PASSPHRASE=<your_passphrase>
-      hodl -d 100.00 -i 15 -m 50.00 -a LTC 0.5 -a ETH 0.25 -a BTC 0.25
+      hodl-cli -i 15 -d 100.00 -b 95.00 -a LTC 0.10 -a ETH 0.60 -a BTC 0.30
 
   Explanation:
 
       The above invocation will deposit $100.00 every 15 days. In addition,
-      if the Pro account has at least $50.00 available to trade, all of the
-      available USD will be used to buy other currencies as follows:
+      if the Pro account      has $95.00 available to trade, $95.00 will
+      used to buy other currencies as follows:
 
-      50% will be used to buy LTC
-      25% will be used to buy ETH
-      25% will be used to buy BTC
+      10% will be used to buy LTC
+      60% will be used to buy ETH
+      30% will be used to buy BTC
 
 Options:
-  -d, --deposit-amount DECIMAL    Amount to deposit every `deposit-interval`
-                                  days
+  -n, --deposit-account TEXT      Name string used to filter multiple bank
+                                  accounts. If not specified, the first
+                                  account found with `deposit-account-type` is
+                                  used
 
-  -i, --deposit-interval INTEGER  Interval in days after which a deposit
-                                  should be made
+  -t, --deposit-account-type TEXT
+                                  Account type used in conjunction with
+                                  `deposit-account` to find an account from
+                                  which to deposit fiat
 
-  -m, --min-available-to-trade DECIMAL
-                                  The minimum available balance in USD that,
-                                  when met, will result in an allocation
+  -d, --deposit-amount DECIMAL    Amount to deposit every `interval` days
+  -i, --interval INTEGER          Interval in days after which a deposit
+                                  and/or buy should be made
+
+  -b, --buy-amount DECIMAL        The amount of fiat to allocate every
+                                  `interval` days
 
   -a, --allocation-percentage <TEXT DECIMAL>...
                                   A currency and the percentage of available
@@ -62,8 +74,12 @@ Options:
                                   different currencies and the total
                                   percentage should add up to 1. If the total
                                   percentage is less than one, the remainder
-                                  will be left as USD.
+                                  will be left as fiat.
                                   
                                   Example: -a ETH 0.25 -a BTC 0.25 -a LTC 0.5
 
+  --dry-run                       When present, print what we would have done
+                                  but don't actually deposit or buy anything
+
+  -v, --verbose                   When present, print debug logs.
   -h, --help                      Show this message and exit.

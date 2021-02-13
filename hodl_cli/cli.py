@@ -6,7 +6,7 @@ from decimal import Decimal
 import click
 import cbpro
 
-from hodl.app import HodlApp
+from hodl_cli.app import HodlApp
 
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
@@ -71,22 +71,22 @@ def run(deposit_account,
     """
     Dollar-cost averaging for crypto on the command line using Coinbase Pro.
 
-    When run, hodl will check whether a deposit needs to be made and, if so, initiate
+    When run, hodl-cli will check whether a deposit needs to be made and, if so, initiate
     the deposit using a linked bank account.
 
-    Then, if there is enough available fiat in the Pro account, hodl will buy currencies
+    Then, if there is enough available fiat in the Pro account, hodl-cli will buy currencies
     using the specified fiat amount, given a user-specified asset allocation. Currencies
     are traded at market price at the time the script is run.
 
-    hodl is meant to be run as a cron. The cron can be run at any interval
+    hodl-cli is meant to be run as a cron. The cron can be run at any interval
     less than the `interval` -- I recommend daily.
     The script will ensure that deposits and buys are only made every `interval`
     days irrespective of how often it is run. This is done by searching account 
     history in the past `interval` days and ensuring that no deposit or buy for a given
     amount has been executed.
 
-    hodl does *not* protect against concurrency issues. Please make sure that only one
-    instance of hodl is running at a time to prevent duplicate deposits and buys (PRs welcome).
+    hodl-cli does *not* protect against concurrency issues. Please make sure that only one
+    instance of hodl-cli is running at a time to prevent duplicate deposits and buys (PRs welcome).
 
     In addition to the CLI options, a few environment variables must be present:
 
@@ -98,7 +98,7 @@ def run(deposit_account,
     Installation:
 
     \b
-        pip install hodl
+        pip install hodl-cli
 
     Example usage:
 
@@ -106,7 +106,7 @@ def run(deposit_account,
         export COINBASE_PRO_API_KEY=<your_api_key>
         export COINBASE_PRO_API_SECRET=<your_api_secret>
         export COINBASE_PRO_PASSPHRASE=<your_passphrase>
-        hodl -i 15 -d 100.00 -b 95.00 -a LTC 0.10 -a ETH 0.60 -a BTC 0.30
+        hodl-cli -i 15 -d 100.00 -b 95.00 -a LTC 0.10 -a ETH 0.60 -a BTC 0.30
 
     Explanation:
 

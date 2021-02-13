@@ -16,5 +16,5 @@ upload:
 
 docs: compile
 	virtualenv venv
-	. venv/bin/activate && pip install dist/*.whl && hodl -h > README
+	. venv/bin/activate && pip install dist/*.whl && hodl-cli -h > README
 	rm -rf venv
