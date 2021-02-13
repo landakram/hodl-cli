@@ -1,6 +1,8 @@
 import os
 from decimal import Decimal, ROUND_DOWN
 
+from collections import defaultdict
+
 import dateutil.parser
 from dateutil.tz import tzutc
 
@@ -28,13 +30,76 @@ class HodlApp:
             if p['type'] == account_type and match_substring in p['name']:
                 return p
 
+    def get_account_history(self, currency, after=None):
+        a = self.get_fiat_account(currency)
+        history = self.client.get_account_history(a["id"])
+        entries_within_interval = []
+        for entry in history:
+            created_at = dateutil.parser.parse(entry['created_at'])
+            if not after or created_at >= after:
+                entries_within_interval.append(entry)
+            else:
+                break
+        return entries_within_interval
+
+    def filter_buys(self, entries):
+        for entry in entries:
+            amount = Decimal(entry['amount'])
+            if entry['type'] == 'match' and amount < 0:
+                yield entry
+
+    def group_by_order(self, matches):
+        orders_to_matches = defaultdict(list)
+        for match in matches:
+            details = match['details']
+            order_id = details['order_id']
+            orders_to_matches[order_id].append(match)
+        return orders_to_matches
+
+    def summarize_orders(self, orders_to_matches):
+        orders_to_summaries = dict()
+        for order, matches in orders_to_matches.items():
+            sample_match = list(matches)[0]
+            product_id = sample_match['details']['product_id']
+            base_curency, quote_currency = product_id.split('-')
+            orders_to_summaries[order] = {
+                'order_id': order['id'],
+                'base_curency': base_curency,
+                'quote_currency': quote_currency,
+                'amount': self.sum_amounts(matches)
+            }
+        return orders_to_summaries
+
+    def sum_amounts(self, matches):
+        amount = Decimal()
+        for match in matches:
+            amount += Decimal(match['amount'])
+        return amount
+
+    def should_buy(self,
+                   currency=None,
+                   target_amount=None,
+                   allocation_percentages=None,
+                   interval=datetime.timedelta(days=15)):
+        now = datetime.datetime.now(tzutc())
+        entries = self.get_account_history(currency, after=(now - interval))
+        buys = self.filter_buys(entries)
+        orders = self.group_by_order(buys)
+        summaries = self.summarize_orders(orders)
+
+        amounts = self.allocation_amounts(target_amount, allocation_percentages)
+        for id, order in summaries.items():
+            for base_currency, amount_in_quote_currency in amounts.items():
+                if (order['base_curency'] == base_curency and
+                    order['amount'] == amount_in_quote_currency):
+                    return False
+        return True
 
     def get_all_deposits(self, currency):
         a = self.get_fiat_account(currency)
         r = requests.get(self.client.url + '/accounts/{}/transfers'.format(a['id']),
                          auth=self.client.auth)
         return r.json()
-
 
     def should_create_deposit(self, deposits, target_amount=None, interval=datetime.timedelta(days=15)):
         for d in deposits:
@@ -77,7 +142,10 @@ class HodlApp:
         buy_params = dict(
             product_id=pair, type='market', side='buy', funds=str(funds))
         if self.dry_run:
-            self.print_fn('dry_run')
+            self.print_fn('** Dry run mode **')
+            self.print_fn('I would have bought {} {} worth of {}'.format(
+                funds, quote_currency, base_curency
+            ))
             self.print_fn(buy_params)
             return dict(dry_run=True, **buy_params)
         else:
@@ -87,18 +155,18 @@ class HodlApp:
     def allocate_fiat(self,
                       quote_currency,
                       allocation_percentages=dict(),
-                      minimum_available_to_trade=Decimal('100')):
+                      buy_amount=Decimal('100')):
         available = self.get_available_to_trade(quote_currency)
         buys = list()
-        if available >= minimum_available_to_trade:
-            amounts = self.allocation_amounts(available, allocation_percentages)
+        if available >= buy_amount:
+            amounts = self.allocation_amounts(buy_amount, allocation_percentages)
             for base_currency, amount_in_quote_currency in amounts.items():
                 buys.append(self.buy(base_currency, quote_currency, amount_in_quote_currency))
-        elif self.verbose:
+        else:
             self.print_fn(
-                "Not allocating because available ${} is less than minimum_available_to_trade ${}".format(
+                "Not allocating because available ${} is less than buy_amount ${}".format(
                     available,
-                    minimum_available_to_trade
+                    buy_amount
                 )
             )
         return buys
@@ -106,8 +174,8 @@ class HodlApp:
 
     def deposit(self, amount, payment_method):
         if self.dry_run:
-            self.print_fn("dry_run")
-            self.print_fn("Deposit params: \n{} \n{}".format(p(amount), p(payment_method)))
+            self.print_fn('** Dry run mode **')
+            self.print_fn('I would have deposited {} {} using {}'.format(amount, payment_method['currency'], payment_method['name']))
         else:
             return self.client.deposit(
                 amount=amount,
@@ -120,8 +188,8 @@ class HodlApp:
             deposit_account,
             deposit_account_type,
             deposit_amount,
-            deposit_interval,
-            min_available_to_trade,
+            interval,
+            buy_amount,
             asset_allocation):
         if self.dry_run:
             self.print_fn("⚠️  Dry run mode ⚠️  ")
@@ -139,22 +207,26 @@ class HodlApp:
             self.print_fn(p(prev_deposits))
 
         self.print_fn('Checking whether to deposit...')
-        if self.should_create_deposit(prev_deposits, target_amount=deposit_amount, interval=deposit_interval):
-            self.print_fn('No deposit for ${} in {}. Creating deposit for ${}.'.format(
-                deposit_amount,
-                deposit_interval, deposit_amount))
+        if self.should_create_deposit(prev_deposits, target_amount=deposit_amount, interval=interval):
+            self.print_fn('No deposit for {} {} in {}. Creating deposit for {} {}.'.format(
+                deposit_amount, fiat_currency,
+                interval,
+                deposit_amount, fiat_currency))
             self.print_fn(p(self.deposit(deposit_amount, payment_method)))
         else:
             self.print_fn('Skipped deposit.')
 
         self.print_fn('Checking whether to allocate...')
-        allocations = self.allocate_fiat(
-            fiat_currency,
-            minimum_available_to_trade=min_available_to_trade,
-            allocation_percentages=asset_allocation
-        )
-        if not allocations:
-            self.print_fn('Skipped allocations.')
-        else:
+        if self.should_buy(currency=fiat_currency,
+                           target_amount=buy_amount,
+                           allocation_percentages=asset_allocation,
+                           interval=interval):
+            allocations = self.allocate_fiat(
+                fiat_currency,
+                buy_amount=buy_amount,
+                allocation_percentages=asset_allocation
+            )
             self.print_fn(p(allocations))
             self.print_fn('Done.')
+        else:
+            self.print_fn('Skipped allocations.')
