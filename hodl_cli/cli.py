@@ -14,45 +14,46 @@ from hodl_cli.app import HodlApp
     '--deposit-account',
     '-n',
     default='',
-    help='Name string used to filter multiple bank accounts. If not specified, the first account found with `deposit-account-type` is used')
+    help='Name string used to filter multiple bank accounts. If not specified, the first account found with `deposit-account-type` is used.')
 @click.option(
     '--deposit-account-type',
     '-t',
     default='ach_bank_account',
-    help='Account type used in conjunction with `deposit-account` to find an account from which to deposit fiat')
+    help='Account type used in conjunction with `deposit-account` to find an account from which to deposit fiat.',
+    show_default=True)
 @click.option(
     '--deposit-amount',
     '-d',
-    default=Decimal('100.00'),
+    default=Decimal('0.00'),
     type=Decimal,
-    help='Amount to deposit every `interval` days')
+    help='Amount to deposit every `interval` days.',
+    show_default=True)
 @click.option(
     '--interval',
     '-i',
     type=int,
     default='15',
-    help='Interval in days after which a deposit and/or buy should be made')
+    help='Interval in days after which a deposit and/or buy should be made.',
+    show_default=True)
 @click.option(
     '--buy-amount',
     '-b',
-    default=Decimal('100.00'),
+    default=Decimal('0.00'),
     type=Decimal,
-    help='The amount of fiat to allocate every `interval` days'
-)
+    help='The amount of fiat to allocate every `interval` days.',
+    show_default=True)
 @click.option(
     '--allocation-percentage',
     '-a',
     type=(str, Decimal),
     multiple=True,
-    help='A currency and the percentage of available funds that should be allocated to it. This option may be provided multiple times for different currencies and the total percentage should add up to 1. If the total percentage is less than one, the remainder will be left as fiat. \n\nExample: -a ETH 0.25 -a BTC 0.25 -a LTC 0.5'
-)
+    help='A currency and the percentage of available funds that should be allocated to it. This option may be provided multiple times for different currencies and the total percentage should add up to 1. If the total percentage is less than one, the remainder will be left as fiat. \n\nExample: -a ETH 0.25 -a BTC 0.25 -a LTC 0.5')
 @click.option(
     '--dry-run',
     default=False,
     is_flag=True,
     type=bool,
-    help='When present, print what we would have done but don\'t actually deposit or buy anything'
-)
+    help='When present, print what we would have done but don\'t actually deposit or buy anything')
 @click.option(
     '--verbose',
     '-v',
@@ -110,8 +111,7 @@ def run(deposit_account,
 
     Explanation:
 
-        The above invocation will deposit $100.00 every 15 days. In addition, if the Pro account 
-        has $95.00 available to trade, $95.00 will used to buy other currencies as follows:
+        The above invocation will deposit $100.00 every 15 days. In addition, if the Pro account has $95.00 available to trade, $95.00 will used to buy other currencies as follows:
 
     \b
         10% will be used to buy LTC

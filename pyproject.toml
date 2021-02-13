@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "hodl-cli"
-version = "0.1.0"
+version = "2.0.1"
 description = "Dollar-cost averaging for crypto on the command line."
 authors = ["Mark Hudnall <me@markhudnall.com>"]
 license = "MIT"

@@ -82,6 +82,9 @@ class HodlApp:
                    target_amount=None,
                    allocation_percentages=None,
                    interval=datetime.timedelta(days=15)):
+        if target_amount == Decimal('0') or not allocation_percentages:
+            return False
+
         now = datetime.datetime.now(tzutc())
         entries = self.get_account_history(currency, after=(now - interval))
         buys = self.filter_buys(entries)
@@ -115,6 +118,9 @@ class HodlApp:
         return r.json()
 
     def should_create_deposit(self, deposits, target_amount=None, interval=datetime.timedelta(days=15)):
+        if target_amount == Decimal('0'):
+            return False
+
         for d in deposits:
             created_at = dateutil.parser.parse(d['created_at'])
             canceled_at = d['canceled_at']

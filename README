@@ -42,8 +42,8 @@ Usage: hodl-cli [OPTIONS]
   Explanation:
 
       The above invocation will deposit $100.00 every 15 days. In addition,
-      if the Pro account      has $95.00 available to trade, $95.00 will
-      used to buy other currencies as follows:
+      if the Pro account has $95.00 available to trade, $95.00 will used to
+      buy other currencies as follows:
 
       10% will be used to buy LTC
       60% will be used to buy ETH
@@ -53,19 +53,22 @@ Options:
   -n, --deposit-account TEXT      Name string used to filter multiple bank
                                   accounts. If not specified, the first
                                   account found with `deposit-account-type` is
-                                  used
+                                  used.
 
   -t, --deposit-account-type TEXT
                                   Account type used in conjunction with
                                   `deposit-account` to find an account from
-                                  which to deposit fiat
+                                  which to deposit fiat.  [default:
+                                  ach_bank_account]
 
-  -d, --deposit-amount DECIMAL    Amount to deposit every `interval` days
+  -d, --deposit-amount DECIMAL    Amount to deposit every `interval` days.
+                                  [default: 0.00]
+
   -i, --interval INTEGER          Interval in days after which a deposit
-                                  and/or buy should be made
+                                  and/or buy should be made.  [default: 15]
 
   -b, --buy-amount DECIMAL        The amount of fiat to allocate every
-                                  `interval` days
+                                  `interval` days.  [default: 0.00]
 
   -a, --allocation-percentage <TEXT DECIMAL>...
                                   A currency and the percentage of available
