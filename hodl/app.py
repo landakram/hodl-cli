@@ -21,6 +21,7 @@ class HodlApp:
         self.print_fn = print_fn
         self.dry_run = dry_run
         self.verbose = verbose
+        self.idempotency_fudge_factor = Decimal('0.10')
 
 
     def get_payment_method(self, account_type='ach_bank_account', match_substring=''):
@@ -45,7 +46,7 @@ class HodlApp:
     def filter_buys(self, entries):
         for entry in entries:
             amount = Decimal(entry['amount'])
-            if entry['type'] == 'match' and amount < 0:
+            if entry['type'] in ['match', 'fee'] and amount < 0:
                 yield entry
 
     def group_by_order(self, matches):
@@ -63,7 +64,7 @@ class HodlApp:
             product_id = sample_match['details']['product_id']
             base_curency, quote_currency = product_id.split('-')
             orders_to_summaries[order] = {
-                'order_id': order['id'],
+                'order_id': order,
                 'base_curency': base_curency,
                 'quote_currency': quote_currency,
                 'amount': self.sum_amounts(matches)
@@ -88,10 +89,22 @@ class HodlApp:
         summaries = self.summarize_orders(orders)
 
         amounts = self.allocation_amounts(target_amount, allocation_percentages)
+
+        if self.verbose:
+            self.print_fn("Comparing orders in last `interval` days to see if we should buy. Considering these orders:")
+            self.print_fn(p(orders))
+            self.print_fn("Summarized as follows:")
+            self.print_fn(p(summaries))
+            self.print_fn("Considering these allocation amounts:")
+            self.print_fn(p(amounts))
         for id, order in summaries.items():
             for base_currency, amount_in_quote_currency in amounts.items():
-                if (order['base_curency'] == base_curency and
-                    order['amount'] == amount_in_quote_currency):
+                if self.verbose:
+                    self.print_fn(abs(-order['amount'] - amount_in_quote_currency))
+                    self.print_fn(self.idempotency_fudge_factor)
+
+                if (order['base_curency'] == base_currency and
+                    abs(-order['amount'] - amount_in_quote_currency) <= self.idempotency_fudge_factor):
                     return False
         return True
 
@@ -109,7 +122,8 @@ class HodlApp:
                 'completed_at'] else None
 
             now = datetime.datetime.now(tzutc())
-            if created_at > (now - interval) and d['amount'] == target_amount:
+            if (created_at > (now - interval) and
+                abs(Decimal(d['amount']) - target_amount) <= self.idempotency_fudge_factor):
                 if self.verbose:
                     self.print_fn("Found recent deposit: \n{}".format(p(d)))
                 return False
@@ -140,11 +154,11 @@ class HodlApp:
         pair = '{}-{}'.format(base_currency, quote_currency)
         funds = amount_in_quote_currency.quantize(Decimal('.01'), rounding=ROUND_DOWN)
         buy_params = dict(
-            product_id=pair, type='market', side='buy', funds=str(funds))
+            product_id=pair, order_type='market', funds=str(funds))
         if self.dry_run:
             self.print_fn('** Dry run mode **')
             self.print_fn('I would have bought {} {} worth of {}'.format(
-                funds, quote_currency, base_curency
+                funds, quote_currency, base_currency
             ))
             self.print_fn(buy_params)
             return dict(dry_run=True, **buy_params)
@@ -173,12 +187,13 @@ class HodlApp:
 
 
     def deposit(self, amount, payment_method):
+        funds = amount.quantize(Decimal('.01'), rounding=ROUND_DOWN)
         if self.dry_run:
             self.print_fn('** Dry run mode **')
-            self.print_fn('I would have deposited {} {} using {}'.format(amount, payment_method['currency'], payment_method['name']))
+            self.print_fn('I would have deposited {} {} using {}'.format(funds, payment_method['currency'], payment_method['name']))
         else:
             return self.client.deposit(
-                amount=amount,
+                amount=str(funds),
                 currency=payment_method['currency'],
                 payment_method_id=payment_method['id']
             )
